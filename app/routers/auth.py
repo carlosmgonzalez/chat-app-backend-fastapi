@@ -66,7 +66,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], sessio
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=ALGORITHM)
-        email = payload.get("username")
+        email = payload.get("email")
         if email is None:
             raise credentials_exception
     except InvalidTokenError:
@@ -76,8 +76,8 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], sessio
         raise credentials_exception
     return user
 
-def authenticate_user(email: str, password: str, session: Session = Depends(get_session)) -> User | None:
-    user = session.exec(select(User).where(User.email == email)).first()
+def authenticate_user(email: str, password: str, session: Session) -> User | None:
+    user = get_user(email, session)
     if user:
         is_correct_password = verify_password(password, user.hashed_password)
         if is_correct_password:
@@ -89,18 +89,18 @@ async def login_for_access_token(
     *, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: Session = Depends(get_session)
 ) -> Token:
     """
-    Endpoint para obtener un token de acceso usando username y password.
+    Endpoint para obtener un token de acceso usando email y password.
     Este ES el endpoint de login principal.
     """
     user = authenticate_user(email=form_data.username, password=form_data.password, session=session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data = {"id": user.id, "email": user.email, "name": user.name}, expires_delta=access_token_expires )
+    access_token = create_access_token(data = {"id": str(user.id), "email": user.email, "name": user.name}, expires_delta=access_token_expires )
     return Token(access_token=access_token, token_type="bearer")
 
 @router.post("/register")
