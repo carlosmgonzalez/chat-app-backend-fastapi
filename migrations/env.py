@@ -8,6 +8,7 @@ from alembic import context
 
 from app.core.env_config import env
 from app.models.user import User
+from app.models.chat import Chat, Message, ChatUser
 
 
 # this is the Alembic Config object, which provides

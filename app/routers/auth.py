@@ -4,12 +4,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
 from app.db.session import get_session
-from app.models.user import User
+from app.models.user import User, UserResponse, UserCreate
 from sqlmodel import select, Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from app.core.env_config import env
-import uuid
 import jwt
 
 SECRET_KEY = env.SECRET_KEY
@@ -21,16 +20,6 @@ router = APIRouter(prefix="/auth")
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-class UserResponse(BaseModel):  # Nueva clase para respuestas
-    id: uuid.UUID
-    name: str
-    email: str
-
-class UserCreate(BaseModel):
-    name: str
-    email: str
-    password: str
 
 bcrypt = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

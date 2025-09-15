@@ -1,7 +1,8 @@
+# type: ignore
 """init
 
 Revision ID: fc69c4257b38
-Revises: 
+Revises:
 Create Date: 2025-09-13 15:45:27.876346
 
 """

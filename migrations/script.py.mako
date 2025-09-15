@@ -1,4 +1,3 @@
-# type: ignore
 """${message}
 
 Revision ID: ${up_revision}
