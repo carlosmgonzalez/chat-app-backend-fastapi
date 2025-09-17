@@ -1,6 +1,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    OAuth2PasswordRequestForm,
+    HTTPAuthorizationCredentials,
+    HTTPBearer
+)
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
 from app.db.session import get_session
@@ -21,9 +26,45 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class TokenData(BaseModel):
+    id: str
+    email: str
+    name: str
+
 bcrypt = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+security = HTTPBearer()
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+
+        user_id = payload.get("id")
+        email = payload.get("email")
+        name = payload.get("name")
+
+        if user_id is None or email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return TokenData(
+            id=user_id,
+            email=email,
+            name=name
+        )
+
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 def verify_password(plain_password: str, hashed_password: str):
     return bcrypt.verify(plain_password, hashed_password)
