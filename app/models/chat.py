@@ -60,5 +60,11 @@ class ChatResponse(SQLModel):
     messages: list["MessageResponse"]
 
 
+class UserChatsResponse(SQLModel):
+    id: uuid.UUID
+    created_at: datetime
+    users: list["UserResponse"]
+
+
 MessageResponse.model_rebuild()
 ChatResponse.model_rebuild()
