@@ -90,6 +90,26 @@ def create_access_token(data: dict[str, str | datetime], expires_delta: timedelt
     return encoded_jwt
 
 
+def get_user_from_token(token: str) -> TokenData:
+    """
+    Decodifica un token para obtener los datos del usuario.
+    Lanza ValueError si el token es inválido o ha expirado.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("id")
+        email = payload.get("email")
+        name = payload.get("name")
+
+        if user_id is None or email is None:
+            raise ValueError("Token inválido: faltan datos del usuario.")
+
+        return TokenData(id=uuid.UUID(user_id), email=email, name=name)
+
+    except jwt.InvalidTokenError as e:
+        raise ValueError(f"Token inválido o expirado: {e}") from e
+
+
 def get_user(email: str, session: Session) -> User | None:
     user = session.exec(select(User).where(User.email == email)).first()
     if user:

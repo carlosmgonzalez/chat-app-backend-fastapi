@@ -5,10 +5,15 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Depends,
+    Query,
+    status,
 )
 from sqlmodel import Session
+from jwt.exceptions import InvalidTokenError
+
 from app.db.session import get_session
 from app.models.chat import Message
+from app.routers.auth import get_user_from_token
 from app.websockets.manager import ConnectionManager
 
 
@@ -18,18 +23,25 @@ router = APIRouter()
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{user_id_str}")
+@router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
-    user_id_str: str,
     session: Annotated[Session, Depends(get_session)],
+    token: Annotated[str | None, Query()] = None,
 ):
-    # Convirtiendo el user_id el cual es un str a uuid.UUID
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        print(f"Connection rejected: Invalid user_id format '{user_id_str}'")
+    if token is None:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
+
+    try:
+        current_user = get_user_from_token(token)
+    except (ValueError, InvalidTokenError):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    # Convirtiendo el user_id el cual es un str a uuid.UUID
+    user_id = current_user.id
+    user_id_str = str(current_user.id)
 
     await manager.connect_user(user_id, websocket)
 

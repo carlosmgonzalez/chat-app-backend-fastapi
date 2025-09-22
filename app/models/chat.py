@@ -64,7 +64,9 @@ class UserChatsResponse(SQLModel):
     id: uuid.UUID
     created_at: datetime
     users: list["UserResponse"]
+    last_message: MessageResponse | None = None
 
 
 MessageResponse.model_rebuild()
 ChatResponse.model_rebuild()
+UserChatsResponse.model_rebuild()

@@ -28,6 +28,30 @@ class NewDirectChatRequest(BaseModel):
     receiver_user_email: str
 
 
+@router.get("/", response_model=list[UserChatsResponse])
+def get_user_chats(
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[TokenData, Depends(verify_token)],
+):
+    """Get all chats for a given user"""
+
+    statement = (
+        select(Chat)
+        .join(ChatUser)
+        .where(ChatUser.user_id == current_user.id)
+        .options(
+            selectinload(getattr(Chat, "users")), noload(getattr(Chat, "messages"))
+        )
+    )
+
+    user_chats = session.exec(statement).all()
+
+    if not user_chats:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found any chat")
+
+    return user_chats
+
+
 @router.post("/new")
 def create_new_chat(
     body: NewDirectChatRequest,
@@ -72,30 +96,7 @@ def create_new_chat(
     return chat
 
 
-@router.get("/user", response_model=list[UserChatsResponse])
-def get_user_chats(
-    session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[TokenData, Depends(verify_token)],
-):
-    """Get all chats for a given user"""
-
-    statement = (
-        select(Chat)
-        .join(ChatUser)
-        .where(ChatUser.user_id == current_user.id)
-        .options(
-            selectinload(getattr(Chat, "users")), noload(getattr(Chat, "messages"))
-        )
-    )
-
-    user_chats = session.exec(statement).all()
-    if not user_chats:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found any chat")
-
-    return user_chats
-
-
-@router.get("/record/{chat_id}", response_model=ChatResponse)
+@router.get("/{chat_id}", response_model=ChatResponse)
 def get_chat_by_id(
     chat_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
