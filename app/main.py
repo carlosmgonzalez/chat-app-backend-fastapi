@@ -10,7 +10,13 @@ app = FastAPI(proxy_headers=True)
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*.ngrok-free.app", "*.ngrok.io", "localhost", "127.0.0.1"],
+    allowed_hosts=[
+        "*.ngrok-free.app",
+        "*.ngrok.io",
+        "localhost",
+        "127.0.0.1",
+        "*.onrender.com",
+    ],
 )
 
 app.include_router(auth_router)
