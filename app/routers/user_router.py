@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.db.session import get_session
 from sqlmodel import Session, select
-from app.models.user import User
-from app.models.common import UserResponse
+from app.models.user_model import User
+from app.models.common_model import UserResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

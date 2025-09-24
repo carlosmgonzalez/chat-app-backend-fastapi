@@ -3,10 +3,10 @@ import enum
 import uuid
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
-from .common import UserResponse
+from .common_model import UserResponse
 
 if TYPE_CHECKING:
-    from .user import User
+    from .user_model import User
 
 
 class ChatType(str, enum.Enum):
@@ -64,7 +64,6 @@ class UserChatsResponse(SQLModel):
     id: uuid.UUID
     created_at: datetime
     users: list["UserResponse"]
-    last_message: MessageResponse | None = None
 
 
 MessageResponse.model_rebuild()

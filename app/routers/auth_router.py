@@ -10,8 +10,8 @@ from fastapi.security import (
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
 from app.db.session import get_session
-from app.models.user import User, UserCreate
-from app.models.common import UserResponse
+from app.models.user_model import User, UserCreate
+from app.models.common_model import UserResponse
 from sqlmodel import select, Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone

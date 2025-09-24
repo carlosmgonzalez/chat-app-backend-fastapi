@@ -3,10 +3,10 @@ import uuid
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, Relationship
 from typing import TYPE_CHECKING
-from .chat import ChatUser
+from .chat_model import ChatUser
 
 if TYPE_CHECKING:
-    from .chat import Chat, Message
+    from .chat_model import Chat, Message
 
 
 class UserBase(SQLModel):

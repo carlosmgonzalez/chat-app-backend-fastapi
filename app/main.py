@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from app.routers.auth import router as auth_router
-from app.routers.user import router as user_router
-from app.routers.chat import router as chat_router
-from app.websockets.router import router as websockets_router
+from app.routers.auth_router import router as auth_router
+from app.routers.user_router import router as user_router
+from app.routers.chat_router import router as chat_router
+from app.websockets.websocket_router import router as websockets_router
 
 
 app = FastAPI(proxy_headers=True)

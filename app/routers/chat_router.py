@@ -5,14 +5,16 @@ from fastapi import (
     HTTPException,
     status,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from app.db.session import get_session
-from .auth import TokenData, verify_token, get_user
-from app.models.chat import (
+from app.models.user_model import User
+from .auth_router import TokenData, verify_token
+from app.models.chat_model import (
     Chat,
     ChatUser,
     ChatType,
     ChatResponse,
+    Message,
     UserChatsResponse,
 )
 from sqlalchemy import func
@@ -25,7 +27,8 @@ router = APIRouter(prefix="/chat")
 
 
 class NewDirectChatRequest(BaseModel):
-    receiver_user_email: str
+    receiver_user_id: uuid.UUID
+    message: str
 
 
 @router.get("/", response_model=list[UserChatsResponse])
@@ -58,7 +61,10 @@ def create_new_chat(
     current_user: Annotated[TokenData, Depends(verify_token)],
     session: Annotated[Session, Depends(get_session)],
 ):
-    receiver_user = get_user(body.receiver_user_email, session)
+    receiver_user = session.exec(
+        select(User).where(User.id == body.receiver_user_id)
+    ).first()
+
     if not receiver_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="The other user not found"
@@ -69,10 +75,11 @@ def create_new_chat(
         select(Chat)
         .join(ChatUser)
         .where(Chat.type == ChatType.DIRECT)
-        .where(getattr(ChatUser, "user_id").in_([current_user.id, receiver_user.id]))
-        .group_by(getattr(Chat, "id"))
-        .having(func.count(getattr(Chat, "id")) == 2)
+        .where(col(ChatUser.user_id).in_([current_user.id, receiver_user.id]))
+        .group_by(col(Chat.id))
+        .having(func.count(col(Chat.id)) == 2)
     )
+
     existing_chat = session.exec(statement).first()
 
     if existing_chat:
@@ -89,11 +96,37 @@ def create_new_chat(
     receiver_user_in_chat = ChatUser(chat_id=chat.id, user_id=receiver_user.id)
     session.add(receiver_user_in_chat)
 
+    message_data = Message(
+        chat_id=chat.id, sender_id=current_user.id, content=body.message
+    )
+
+    session.add(message_data)
+
     session.commit()
 
     session.refresh(chat)
 
     return chat
+
+
+@router.get("/user/{receiver_user_id}", response_model=UserChatsResponse)
+def get_chat_by_receiver_user_id(
+    receiver_user_id: uuid.UUID,
+    current_user: Annotated[TokenData, Depends(verify_token)],
+    session: Annotated[Session, Depends(get_session)],
+):
+    statement = (
+        select(Chat)
+        .join(ChatUser)
+        .where(Chat.type == ChatType.DIRECT)
+        .where(col(ChatUser.user_id).in_([current_user.id, receiver_user_id]))
+        .group_by(col(Chat.id))
+        .having(func.count(col(Chat.id)) == 2)
+    )
+
+    existing_chat = session.exec(statement).first()
+
+    return existing_chat
 
 
 @router.get("/{chat_id}", response_model=ChatResponse)

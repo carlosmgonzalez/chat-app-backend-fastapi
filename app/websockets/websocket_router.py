@@ -12,8 +12,8 @@ from sqlmodel import Session
 from jwt.exceptions import InvalidTokenError
 
 from app.db.session import get_session
-from app.models.chat import Message
-from app.routers.auth import get_user_from_token
+from app.models.chat_model import Message
+from app.routers.auth_router import get_user_from_token
 from app.websockets.manager import ConnectionManager
 
 
@@ -75,6 +75,17 @@ async def websocket_endpoint(
                         "online_users": [str(u) for u in online_users],
                     },
                 )
+
+            elif message_type == "new_chat":
+                receiver_user = data.get("receiver_user")
+
+                chat_id = data.get("chat_id")
+
+                await manager.send_to_user(user_id=receiver_user.id, message={
+                    "type": "new_chat",
+                    "receiver_user": receiver_user,
+                    "chat_id": chat_id
+                })
 
             elif message_type == "unsubscribe_chat":
                 await manager.unsubscribe_from_chat(user_id, chat_id)
