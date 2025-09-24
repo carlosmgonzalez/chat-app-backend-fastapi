@@ -16,10 +16,17 @@ app.add_middleware(
         "localhost",
         "127.0.0.1",
         "*.onrender.com",
+        "*.railway.app",
     ],
 )
+
 
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(chat_router)
 app.include_router(websockets_router)
+
+
+@app.get("/hello")
+def hello():
+    return "Hello world"
