@@ -77,25 +77,39 @@ async def websocket_endpoint(
                 )
 
             elif message_type == "new_chat":
-                receiver_user = data.get("receiver_user")
-
+                receiver_user_data = data.get("receiver_user")
                 chat_id = data.get("chat_id")
 
-                await manager.send_to_user(user_id=receiver_user.id, message={
-                    "type": "new_chat",
-                    "receiver_user": receiver_user,
-                    "chat_id": chat_id
-                })
+                if not receiver_user_data or not chat_id:
+                    continue
+
+                try:
+                    receiver_user_id = uuid.UUID(receiver_user_data["id"])
+                except (ValueError, KeyError):
+                    print(f"Invalid receiver user data: {receiver_user_data}")
+                    continue
+
+                # Enviar notificación al usuario receptor con información del remitente
+                await manager.send_to_user(
+                    user_id=receiver_user_id,
+                    message={
+                        "type": "new_chat",
+                        "chat_id": chat_id,
+                        "sender_user": {  # Información del usuario que creó el chat
+                            "id": user_id_str,
+                            "name": current_user.name,
+                            "email": current_user.email,
+                        },
+                    },
+                )
 
             elif message_type == "unsubscribe_chat":
                 await manager.unsubscribe_from_chat(user_id, chat_id)
 
             elif message_type == "send_message":
                 message_content: dict[str, str] = data.get("content")
-                print(message_content)
 
                 # Aquí se guarda el mensaje en la base de datos
-                # created_at_str = data.get("content", {}).get("created_at")
                 message_data = {
                     "content": message_content["message"],
                     "chat_id": chat_id,
@@ -126,6 +140,10 @@ async def websocket_endpoint(
                     },
                     exclude_user=user_id,
                 )
+
+                # await manager.send_to_user(
+                #     user_id=
+                # )
 
             elif message_type == "typing":
                 await manager.broadcast_to_chat(

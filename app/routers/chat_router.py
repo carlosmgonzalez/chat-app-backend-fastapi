@@ -55,7 +55,7 @@ def get_user_chats(
     return user_chats
 
 
-@router.post("/new")
+@router.post("/new", response_model=UserChatsResponse)
 def create_new_chat(
     body: NewDirectChatRequest,
     current_user: Annotated[TokenData, Depends(verify_token)],
