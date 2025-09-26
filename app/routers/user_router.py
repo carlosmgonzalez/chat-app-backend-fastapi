@@ -7,7 +7,7 @@ from app.models.common_model import UserResponse
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("/", response_model=UserResponse)
+@router.get("", response_model=UserResponse)
 async def get_user_by_email(email: str, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
