@@ -159,7 +159,7 @@ async def login_for_access_token(
     Este ES el endpoint de login principal.
     """
     user = authenticate_user(
-        email=form_data.username, password=form_data.password, session=session
+        email=form_data.username.lower(), password=form_data.password, session=session
     )
     if not user:
         raise HTTPException(
@@ -180,7 +180,7 @@ def register(
     *, user_create: UserCreate, session: Annotated[Session, Depends(get_session)]
 ):
     user_in_db = session.exec(
-        select(User).where((User.email == user_create.email))
+        select(User).where((User.email == user_create.email.lower()))
     ).first()
     if user_in_db:
         raise HTTPException(status_code=400, detail="Email already exists")
@@ -188,7 +188,9 @@ def register(
     hashed_password = get_password_hash(user_create.password)
 
     user = User(
-        name=user_create.name, email=user_create.email, hashed_password=hashed_password
+        name=user_create.name,
+        email=user_create.email.lower(),
+        hashed_password=hashed_password,
     )
     session.add(user)
     session.commit()
